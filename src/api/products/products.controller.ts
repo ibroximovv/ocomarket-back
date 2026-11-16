@@ -272,8 +272,10 @@ export class ProductsController {
   @ApiOperation({
     summary: "Mahsulotni o'chirish (Admin)",
     description:
-      'Buyurtmalar tarixini saqlab qolish uchun odatda `PATCH /:id/flags` orqali ' +
-      "arxivlash afzal ko'riladi.",
+      "Buyurtmalarda qatnashmagan mahsulot butunlay o'chiriladi (`deleted: true`). " +
+      'Buyurtmalar tarixida bor mahsulot esa arxivlanadi va savatlardan olib ' +
+      'tashlanadi (`deleted: false`, `is_archived: true`) — buyurtmalar va Payme ' +
+      'hisob-kitoblari buzilmasligi uchun.',
   })
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);

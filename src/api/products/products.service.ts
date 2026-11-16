@@ -255,6 +255,36 @@ export class ProductsService extends BaseService<
     });
   }
 
+  /**
+   * Mahsulotni o'chirish.
+   *
+   * Agar mahsulot biror buyurtmada qatnashgan bo'lsa, uni jismonan o'chirib
+   * bo'lmaydi: `OrderItem.product` majburiy relation, buyurtmalar tarixi va
+   * Payme hisob-kitoblari (reconciliation) unga tayanadi. Bunday holatda
+   * mahsulot **arxivlanadi** (do'konda ko'rinmaydi, savatga/buyurtmaga
+   * qo'shib bo'lmaydi) va savatlardan olib tashlanadi. Javobdagi `deleted`
+   * maydoni qaysi biri sodir bo'lganini bildiradi.
+   */
+  async remove(id: string): Promise<Product & { deleted: boolean }> {
+    await this.findOne(id);
+
+    const orderItems = await this.prisma.orderItem.count({
+      where: { product_id: id },
+    });
+
+    if (orderItems > 0) {
+      const archived = await this.prisma.product.update({
+        where: { id },
+        data: { is_archived: true, is_top: false, is_featured: false },
+      });
+      await this.prisma.cartItem.deleteMany({ where: { product_id: id } });
+      return { ...archived, deleted: false };
+    }
+
+    const deleted = await this.prisma.product.delete({ where: { id } });
+    return { ...deleted, deleted: true };
+  }
+
   /** Bir nechta mahsulotni bir vaqtda arxivlash/tiklash (admin panel uchun). */
   async bulkArchive(ids: string[], isArchived: boolean) {
     const result = await this.prisma.product.updateMany({
